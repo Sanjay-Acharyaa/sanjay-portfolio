@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Services | Sanjay Acharya',
   description: 'Civil and structural engineering services including structural design, transportation engineering, and water resources management.',

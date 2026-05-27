@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     where: { status: 'PUBLISHED' },
     select: { slug: true, updatedAt: true },
     orderBy: { updatedAt: 'desc' },
-  });
+  }).catch(() => []);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: base,               lastModified: new Date(), changeFrequency: 'weekly',  priority: 1.0 },

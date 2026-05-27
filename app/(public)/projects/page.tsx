@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import ProjectsClient from '@/components/ProjectsClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Projects',
   description: 'Portfolio of civil and structural engineering projects — structural design, transportation, water resources, and construction management.',

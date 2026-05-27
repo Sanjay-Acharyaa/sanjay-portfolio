@@ -5,6 +5,8 @@ import ProjectCard from '@/components/ProjectCard';
 import { prisma } from '@/lib/prisma';
 import ContactForm from '@/components/ContactForm';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Sanjay Acharya | Civil & Structural Engineer',
   description: 'Civil and Structural Engineer based in Nepal specialising in structural design, transportation engineering, and water resources management.',
