@@ -1,0 +1,177 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["portfolio"]
+}
+
+// ─── Admin User ────────────────────────────────────────────────────────────────
+model Admin {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      AdminRole @default(ADMIN)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("admins")
+  @@schema("portfolio")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+
+  @@schema("portfolio")
+}
+
+// ─── Category ──────────────────────────────────────────────────────────────────
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  color       String    @default("#0083cc")
+  createdAt   DateTime  @default(now())
+  projects    Project[]
+
+  @@map("categories")
+  @@schema("portfolio")
+}
+
+// ─── Tag ───────────────────────────────────────────────────────────────────────
+model Tag {
+  id       String       @id @default(cuid())
+  name     String       @unique
+  slug     String       @unique
+  projects ProjectTag[]
+
+  @@map("tags")
+  @@schema("portfolio")
+}
+
+// ─── Project ───────────────────────────────────────────────────────────────────
+model Project {
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  shortDescription String
+  description      String
+  challenge        String?
+  solution         String?
+  results          String[]
+  status           ProjectStatus  @default(DRAFT)
+  featured         Boolean        @default(false)
+  year             Int?
+  location         String?
+  client           String?
+  coverImage       String?
+  images           ProjectImage[]
+  categoryId       String?
+  category         Category?      @relation(fields: [categoryId], references: [id])
+  tags             ProjectTag[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("projects")
+  @@schema("portfolio")
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+
+  @@schema("portfolio")
+}
+
+// ─── Project ↔ Tag (junction) ─────────────────────────────────────────────────
+model ProjectTag {
+  projectId String
+  tagId     String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@map("project_tags")
+  @@schema("portfolio")
+}
+
+// ─── Project Images ────────────────────────────────────────────────────────────
+model ProjectImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String?
+  order     Int     @default(0)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_images")
+  @@schema("portfolio")
+}
+
+// ─── Blog Post ─────────────────────────────────────────────────────────────────
+model BlogPost {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("blog_posts")
+  @@schema("portfolio")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+
+  @@schema("portfolio")
+}
+
+// ─── Contact Message ───────────────────────────────────────────────────────────
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    MessageStatus @default(UNREAD)
+  createdAt DateTime      @default(now())
+
+  @@map("contact_messages")
+  @@schema("portfolio")
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  REPLIED
+
+  @@schema("portfolio")
+}
+
+// ─── Service ───────────────────────────────────────────────────────────────────
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  icon        String?
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("services")
+  @@schema("portfolio")
+}
