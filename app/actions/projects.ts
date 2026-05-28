@@ -20,7 +20,7 @@ export async function createProject(
   const description = (formData.get('description') as string)?.trim();
   const challenge = (formData.get('challenge') as string)?.trim() || null;
   const solution = (formData.get('solution') as string)?.trim() || null;
-  const categoryId = (formData.get('categoryId') as string) || null;
+  const categoryIds = formData.getAll('categoryIds') as string[];
   const tagIds = formData.getAll('tagIds') as string[];
   const resultsRaw = (formData.get('results') as string)?.trim();
   const results = resultsRaw
@@ -61,7 +61,10 @@ export async function createProject(
       coverImage,
       status,
       featured,
-      categoryId: categoryId || null,
+      categoryId: categoryIds[0] ?? null,
+      categories: categoryIds.length
+        ? { create: categoryIds.map(categoryId => ({ categoryId })) }
+        : undefined,
       tags: tagIds.length
         ? { create: tagIds.map(tagId => ({ tagId })) }
         : undefined,
@@ -87,7 +90,7 @@ export async function updateProject(
   const description = (formData.get('description') as string)?.trim();
   const challenge = (formData.get('challenge') as string)?.trim() || null;
   const solution = (formData.get('solution') as string)?.trim() || null;
-  const categoryId = (formData.get('categoryId') as string) || null;
+  const categoryIds = formData.getAll('categoryIds') as string[];
   const tagIds = formData.getAll('tagIds') as string[];
   const resultsRaw = (formData.get('results') as string)?.trim();
   const results = resultsRaw
@@ -135,7 +138,11 @@ export async function updateProject(
       coverImage,
       status,
       featured,
-      categoryId: categoryId || null,
+      categoryId: categoryIds[0] ?? null,
+      categories: {
+        deleteMany: {},
+        create: categoryIds.map(categoryId => ({ categoryId })),
+      },
       tags: {
         deleteMany: {},
         create: tagIds.map(tagId => ({ tagId })),

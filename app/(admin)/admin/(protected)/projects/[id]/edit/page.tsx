@@ -14,7 +14,7 @@ export default async function EditProjectPage({ params }: Props) {
   const [project, categories, tags] = await Promise.all([
     prisma.project.findUnique({
       where: { id },
-      include: { tags: { include: { tag: true } }, images: { orderBy: { order: 'asc' } } },
+      include: { tags: { include: { tag: true } }, images: { orderBy: { order: 'asc' } }, categories: { include: { category: true } } },
     }),
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
     prisma.tag.findMany({ orderBy: { name: 'asc' } }),

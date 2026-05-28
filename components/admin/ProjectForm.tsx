@@ -3,12 +3,16 @@
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createProject, updateProject, type ProjectFormState } from '@/app/actions/projects';
-import type { Category, Tag, Project, ProjectTag, ProjectImage } from '@prisma/client';
+import type { Category, Tag, Project, ProjectTag, ProjectImage, ProjectCategory } from '@prisma/client';
 import { cn } from '@/lib/utils';
 import ImageUpload from './ImageUpload';
 import GalleryUpload, { type GalleryImage } from './GalleryUpload';
 
-type ProjectWithTags = Project & { tags: (ProjectTag & { tag: Tag })[]; images: ProjectImage[] };
+type ProjectWithTags = Project & {
+  tags: (ProjectTag & { tag: Tag })[];
+  images: ProjectImage[];
+  categories: (ProjectCategory & { category: Category })[];
+};
 
 interface Props {
   categories: Category[];
@@ -43,6 +47,9 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     : createProject;
 
   const [state, formAction] = useActionState<ProjectFormState, FormData>(action, {});
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    project?.categories.map(pc => pc.categoryId) ?? (project?.categoryId ? [project.categoryId] : [])
+  );
   const [selectedTags, setSelectedTags] = useState<string[]>(
     project?.tags.map(pt => pt.tagId) ?? []
   );
@@ -72,6 +79,12 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     }
   }, [state, isEdit]);
 
+  function toggleCategory(id: string) {
+    setSelectedCategories(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  }
+
   function toggleTag(id: string) {
     setSelectedTags(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
@@ -81,6 +94,9 @@ export default function ProjectForm({ categories, tags, project }: Props) {
   return (
     <form action={formAction} className="space-y-8">
       {/* Hidden fields */}
+      {selectedCategories.map(id => (
+        <input key={id} type="hidden" name="categoryIds" value={id} />
+      ))}
       {selectedTags.map(id => (
         <input key={id} type="hidden" name="tagIds" value={id} />
       ))}
@@ -141,33 +157,45 @@ export default function ProjectForm({ categories, tags, project }: Props) {
           )}
         </div>
 
-        {/* Category + Status row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-slate-400 text-sm font-medium mb-1.5">Category</label>
-            <select
-              name="categoryId"
-              defaultValue={project?.categoryId ?? ''}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
-            >
-              <option value="">— No category —</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+        {/* Categories multi-select */}
+        <div>
+          <label className="block text-slate-400 text-sm font-medium mb-2">
+            Categories <span className="text-slate-600 font-normal">(select one or more)</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => toggleCategory(cat.id)}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                  selectedCategories.includes(cat.id)
+                    ? 'text-white border-transparent'
+                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                )}
+                style={selectedCategories.includes(cat.id) ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+              >
+                {selectedCategories.includes(cat.id) ? '✓ ' : ''}{cat.name}
+              </button>
+            ))}
           </div>
+          {selectedCategories.length > 0 && (
+            <p className="text-slate-500 text-xs mt-1.5">{selectedCategories.length} categor{selectedCategories.length !== 1 ? 'ies' : 'y'} selected</p>
+          )}
+        </div>
 
-          <div>
-            <label className="block text-slate-400 text-sm font-medium mb-1.5">Status</label>
-            <select
-              name="status"
-              defaultValue={project?.status ?? 'DRAFT'}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
-            </select>
-          </div>
+        {/* Status */}
+        <div className="max-w-xs">
+          <label className="block text-slate-400 text-sm font-medium mb-1.5">Status</label>
+          <select
+            name="status"
+            defaultValue={project?.status ?? 'DRAFT'}
+            className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+          >
+            <option value="DRAFT">Draft</option>
+            <option value="PUBLISHED">Published</option>
+          </select>
         </div>
 
         {/* Year + Location + Client */}
