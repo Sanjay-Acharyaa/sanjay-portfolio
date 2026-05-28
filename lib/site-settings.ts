@@ -7,4 +7,10 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   contact_location: 'Kathmandu, Nepal',
   social_linkedin: 'https://linkedin.com/in/sanjay-acharya',
   social_github: 'https://github.com/Sanjay-Acharyaa',
+  about_name: 'Sanjay Acharya',
+  about_title: 'Civil & Structural Engineer',
+  about_bio: 'Civil engineer with expertise in structural design, transportation systems, and water resources management. Committed to delivering safe, sustainable, and cost-effective engineering solutions for complex infrastructure challenges in Nepal and beyond.',
+  about_cv_url: '/resume.pdf',
+  about_languages: 'Nepali, English',
+  about_availability: 'Open to projects',
 };

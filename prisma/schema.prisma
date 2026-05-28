@@ -185,6 +185,51 @@ model SiteSetting {
   @@schema("portfolio")
 }
 
+// ─── About Content ────────────────────────────────────────────────────────────
+model Experience {
+  id          String   @id @default(cuid())
+  role        String
+  company     String
+  period      String
+  description String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("experiences")
+  @@schema("portfolio")
+}
+
+model Education {
+  id          String   @id @default(cuid())
+  degree      String
+  institution String
+  year        String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("education")
+  @@schema("portfolio")
+}
+
+model Skill {
+  id       String   @id @default(cuid())
+  category String
+  items    String[]
+  order    Int      @default(0)
+
+  @@map("skills")
+  @@schema("portfolio")
+}
+
+model Certification {
+  id    String @id @default(cuid())
+  name  String
+  order Int    @default(0)
+
+  @@map("certifications")
+  @@schema("portfolio")
+}
+
 // ─── Service ───────────────────────────────────────────────────────────────────
 model Service {
   id          String   @id @default(cuid())
