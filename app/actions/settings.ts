@@ -2,18 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-
-export const SETTING_KEYS = {
-  heroBadge: 'hero_badge',
-  heroTitle: 'hero_title',
-  heroSubtitle: 'hero_subtitle',
-} as const;
-
-export const SETTING_DEFAULTS: Record<string, string> = {
-  hero_badge: 'Civil Engineering Professional',
-  hero_title: 'Building Infrastructure, Creating Impact',
-  hero_subtitle: 'Structural design, Transportation engineering, and Water resources management. Leveraging innovation to solve complex engineering challenges.',
-};
+import { SETTING_DEFAULTS } from '@/lib/site-settings';
 
 export async function getSiteSettings(): Promise<Record<string, string>> {
   const rows = await prisma.siteSetting.findMany();
