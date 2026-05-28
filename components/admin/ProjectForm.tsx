@@ -50,12 +50,6 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     }
   }, []);
 
-  function toggleCategory(id: string) {
-    setSelectedCategories(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
-  }
-
   function toggleTag(id: string) {
     setSelectedTags(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
@@ -89,9 +83,6 @@ export default function ProjectForm({ categories, tags, project }: Props) {
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
       {/* Hidden fields */}
-      {selectedCategories.map(id => (
-        <input key={id} type="hidden" name="categoryIds" value={id} />
-      ))}
       {selectedTags.map(id => (
         <input key={id} type="hidden" name="tagIds" value={id} />
       ))}
@@ -158,22 +149,33 @@ export default function ProjectForm({ categories, tags, project }: Props) {
             Categories <span className="text-slate-600 font-normal">(select all that apply)</span>
           </label>
           <div className="flex flex-wrap gap-2">
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => toggleCategory(cat.id)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
-                  selectedCategories.includes(cat.id)
-                    ? 'text-white border-transparent'
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
-                )}
-                style={selectedCategories.includes(cat.id) ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
-              >
-                {selectedCategories.includes(cat.id) ? '✓ ' : ''}{cat.name}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const isSelected = selectedCategories.includes(cat.id);
+              return (
+                <label
+                  key={cat.id}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border cursor-pointer select-none',
+                    isSelected
+                      ? 'text-white border-transparent'
+                      : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                  )}
+                  style={isSelected ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+                >
+                  <input
+                    type="checkbox"
+                    name="categoryIds"
+                    value={cat.id}
+                    checked={isSelected}
+                    onChange={() => setSelectedCategories(prev =>
+                      prev.includes(cat.id) ? prev.filter(c => c !== cat.id) : [...prev, cat.id]
+                    )}
+                    className="sr-only"
+                  />
+                  {isSelected ? '✓ ' : ''}{cat.name}
+                </label>
+              );
+            })}
           </div>
           {selectedCategories.length > 0 && (
             <p className="text-slate-500 text-xs mt-1.5">{selectedCategories.length} selected</p>
