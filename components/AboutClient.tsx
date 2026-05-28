@@ -11,12 +11,12 @@ type Cert = { id: string; name: string };
 const fade = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 
 export default function AboutClient({
-  name, title, bio, cvUrl,
+  name, title, bio, cvUrl, photoUrl,
   location, languages, availability,
   linkedin, github,
   experiences, educations, skills, certifications,
 }: {
-  name: string; title: string; bio: string; cvUrl: string;
+  name: string; title: string; bio: string; cvUrl: string; photoUrl?: string;
   location: string; languages: string; availability: string;
   linkedin?: string; github?: string;
   experiences: Exp[]; educations: Edu[]; skills: Skl[]; certifications: Cert[];
@@ -28,8 +28,13 @@ export default function AboutClient({
       {/* Hero */}
       <motion.div initial="hidden" animate="visible" variants={fade} className="mb-20">
         <div className="flex flex-col md:flex-row gap-10 items-start">
-          <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-4xl">{initials}</span>
+          <div className="w-32 h-32 rounded-2xl overflow-hidden shrink-0 bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white font-bold text-4xl">{initials}</span>
+            )}
           </div>
           <div>
             <h1 className="text-5xl font-bold text-slate-900 dark:text-white mb-3">{name}</h1>

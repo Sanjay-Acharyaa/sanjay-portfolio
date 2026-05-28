@@ -1,8 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { updateSiteSettings, type SettingsState } from '@/app/actions/settings';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -16,11 +17,19 @@ function SubmitButton() {
 
 export default function AboutProfileForm({ settings }: { settings: Record<string, string> }) {
   const [state, action] = useActionState<SettingsState, FormData>(updateSiteSettings, {});
+  const [photoUrl, setPhotoUrl] = useState(settings.about_photo_url || '');
 
   return (
     <form action={action} className="space-y-4">
+      <input type="hidden" name="about_photo_url" value={photoUrl} />
       {state.error && <p className="text-red-400 text-sm">{state.error}</p>}
       {state.success && <p className="text-green-400 text-sm">Saved!</p>}
+
+      <ImageUpload
+        label="Profile Photo"
+        value={photoUrl}
+        onChange={setPhotoUrl}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

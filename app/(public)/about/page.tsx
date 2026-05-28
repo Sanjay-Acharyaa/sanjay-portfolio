@@ -25,6 +25,7 @@ export default async function AboutPage() {
       title={settings.about_title}
       bio={settings.about_bio}
       cvUrl={settings.about_cv_url}
+      photoUrl={settings.about_photo_url}
       location={settings.contact_location}
       languages={settings.about_languages}
       availability={settings.about_availability}
