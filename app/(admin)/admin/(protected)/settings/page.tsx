@@ -1,15 +1,17 @@
 import { auth } from '@/lib/auth';
 import PasswordChangeForm from '@/components/admin/PasswordChangeForm';
 import EmailChangeForm from '@/components/admin/EmailChangeForm';
+import HeroSettingsForm from '@/components/admin/HeroSettingsForm';
+import { getSiteSettings } from '@/app/actions/settings';
 
 export default async function AdminSettingsPage() {
-  const session = await auth();
+  const [session, settings] = await Promise.all([auth(), getSiteSettings()]);
 
   return (
     <div className="max-w-xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-slate-400 text-sm mt-1">Manage your account</p>
+        <p className="text-slate-400 text-sm mt-1">Manage your account and site content</p>
       </div>
 
       {/* Account info */}
@@ -26,6 +28,13 @@ export default async function AdminSettingsPage() {
             <p className="text-slate-500 text-sm">{session?.user?.email}</p>
           </div>
         </div>
+      </div>
+
+      {/* Hero content */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h2 className="text-white font-semibold text-sm mb-1">Homepage Hero</h2>
+        <p className="text-slate-500 text-xs mb-5">Edit the heading and text shown at the top of your homepage</p>
+        <HeroSettingsForm settings={settings} />
       </div>
 
       {/* Email change */}

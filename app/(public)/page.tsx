@@ -4,6 +4,7 @@ import Hero from '@/components/Hero';
 import ProjectCard from '@/components/ProjectCard';
 import { prisma } from '@/lib/prisma';
 import ContactForm from '@/components/ContactForm';
+import { getSiteSettings } from '@/app/actions/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,11 +35,20 @@ async function getCategories() {
 }
 
 export default async function Home() {
-  const [projects, categories] = await Promise.all([getFeaturedProjects(), getCategories()]);
+  const [projects, categories, settings] = await Promise.all([
+    getFeaturedProjects(),
+    getCategories(),
+    getSiteSettings(),
+  ]);
 
   return (
     <>
-      <Hero categories={categories.map(c => c.name)} />
+      <Hero
+        categories={categories.map(c => c.name)}
+        badge={settings.hero_badge}
+        title={settings.hero_title}
+        subtitle={settings.hero_subtitle}
+      />
 
       {/* Featured Projects */}
       <section className="max-w-7xl mx-auto px-4 py-24">

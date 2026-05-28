@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { motion, type Variants } from 'framer-motion';
 
-export default function Hero({ categories }: { categories: string[] }) {
+export default function Hero({ categories, badge, title, subtitle }: {
+  categories: string[];
+  badge: string;
+  title: string;
+  subtitle: string;
+}) {
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -42,7 +47,7 @@ export default function Hero({ categories }: { categories: string[] }) {
         {/* Tag */}
         <motion.div variants={itemVariants}>
           <span className="inline-block px-4 py-1.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 rounded-full text-sm font-medium mb-6">
-            Civil Engineering Professional
+            {badge}
           </span>
         </motion.div>
 
@@ -51,10 +56,7 @@ export default function Hero({ categories }: { categories: string[] }) {
           variants={itemVariants}
           className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white mb-6 leading-tight"
         >
-          Building Infrastructure,{' '}
-          <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-            Creating Impact
-          </span>
+          {title}
         </motion.h1>
 
         {/* Subheading */}
@@ -62,8 +64,7 @@ export default function Hero({ categories }: { categories: string[] }) {
           variants={itemVariants}
           className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 mb-8 leading-relaxed"
         >
-          Structural design, Transportation engineering, and Water resources management.
-          Leveraging innovation to solve complex engineering challenges.
+          {subtitle}
         </motion.p>
 
         {/* Specialties */}

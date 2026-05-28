@@ -160,6 +160,16 @@ enum MessageStatus {
   @@schema("portfolio")
 }
 
+// ─── Site Settings (key-value store) ─────────────────────────────────────────
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+  @@schema("portfolio")
+}
+
 // ─── Service ───────────────────────────────────────────────────────────────────
 model Service {
   id          String   @id @default(cuid())
