@@ -10,6 +10,27 @@ type Cert = { id: string; name: string };
 
 const fade = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 
+function Description({ text }: { text: string }) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const isBullet = (l: string) => /^[-•*]/.test(l);
+  const allBullets = lines.every(isBullet);
+
+  if (allBullets) {
+    return (
+      <ul className="space-y-1.5 text-slate-600 dark:text-slate-400 text-sm">
+        {lines.map((line, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+            <span>{line.replace(/^[-•*]\s*/, '')}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{text}</p>;
+}
+
 export default function AboutClient({
   name, title, bio, cvUrl, photoUrl,
   location, languages, availability,
@@ -82,7 +103,7 @@ export default function AboutClient({
                         <p className="text-primary-600 dark:text-primary-400 text-sm font-medium">{exp.company}</p>
                         {exp.period && <><span className="text-slate-400 text-xs">·</span><p className="text-slate-500 text-sm">{exp.period}</p></>}
                       </div>
-                      {exp.description && <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{exp.description}</p>}
+                      {exp.description && <Description text={exp.description} />}
                     </div>
                   </div>
                 ))}
