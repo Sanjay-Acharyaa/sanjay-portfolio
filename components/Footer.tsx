@@ -1,8 +1,8 @@
-'use client';
-
 import Link from 'next/link';
+import { getSiteSettings } from '@/app/actions/settings';
 
-export default function Footer() {
+export default async function Footer() {
+  const settings = await getSiteSettings();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -32,8 +32,16 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-4">Connect</h4>
             <div className="flex gap-4 flex-col">
-              <a href="https://linkedin.com/in/sanjay-acharya" className="text-slate-400 hover:text-white transition">LinkedIn</a>
-              <a href="https://github.com/Sanjay-Acharyaa" className="text-slate-400 hover:text-white transition">GitHub</a>
+              {settings.social_linkedin && (
+                <a href={settings.social_linkedin} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition">
+                  LinkedIn
+                </a>
+              )}
+              {settings.social_github && (
+                <a href={settings.social_github} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition">
+                  GitHub
+                </a>
+              )}
             </div>
           </div>
         </div>
