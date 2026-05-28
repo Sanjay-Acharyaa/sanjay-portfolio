@@ -1,7 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useMemo, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { createProject, updateProject, type ProjectFormState } from '@/app/actions/projects';
 import type { Category, Tag, Project, ProjectTag, ProjectImage, ProjectCategory } from '@prisma/client';
 import { cn } from '@/lib/utils';
@@ -20,36 +19,12 @@ interface Props {
   project?: ProjectWithTags;
 }
 
-function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
-    >
-      {pending && (
-        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-      )}
-      {pending ? 'Saving…' : label}
-    </button>
-  );
-}
-
 export default function ProjectForm({ categories, tags, project }: Props) {
   const isEdit = !!project;
 
-  // Stabilise action reference — a new .bind() on every render can confuse useActionState in React 19
-  const action = useMemo(
-    () => (isEdit ? updateProject.bind(null, project!.id) : createProject),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const [state, setState] = useState<ProjectFormState>({});
+  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction] = useActionState<ProjectFormState, FormData>(action, {});
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     project?.categories?.map(pc => pc.categoryId) ?? (project?.categoryId ? [project.categoryId] : [])
   );
@@ -66,6 +41,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
       : []
   );
   const [successMsg, setSuccessMsg] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -74,30 +50,44 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    if (state && !state.error && !state.fieldErrors && isEdit) {
-      setSuccessMsg('Project saved!');
-      const t = setTimeout(() => setSuccessMsg(''), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [state, isEdit]);
-
-  function toggleCategory(e: React.MouseEvent, id: string) {
-    e.preventDefault();
+  function toggleCategory(id: string) {
     setSelectedCategories(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   }
 
-  function toggleTag(e: React.MouseEvent, id: string) {
-    e.preventDefault();
+  function toggleTag(id: string) {
     setSelectedTags(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
   }
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      try {
+        const result = isEdit
+          ? await updateProject(project!.id, state, formData)
+          : await createProject(state, formData);
+
+        setState(result ?? {});
+
+        if (!result?.error && !result?.fieldErrors && isEdit) {
+          setSuccessMsg('Project saved!');
+          setTimeout(() => setSuccessMsg(''), 3000);
+        }
+      } catch (err: unknown) {
+        // Re-throw Next.js redirect/notFound errors so the router handles them
+        if (err && typeof err === 'object' && 'digest' in err) throw err;
+        setState({ error: err instanceof Error ? err.message : 'An unexpected error occurred' });
+      }
+    });
+  }
+
   return (
-    <form action={formAction} className="space-y-8">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
       {/* Hidden fields */}
       {selectedCategories.map(id => (
         <input key={id} type="hidden" name="categoryIds" value={id} />
@@ -172,7 +162,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
               <button
                 key={cat.id}
                 type="button"
-                onClick={(e) => toggleCategory(e, cat.id)}
+                onClick={() => toggleCategory(cat.id)}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
                   selectedCategories.includes(cat.id)
@@ -241,7 +231,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); setFeatured(f => !f); }}
+            onClick={() => setFeatured(f => !f)}
             className={cn(
               'relative w-11 h-6 rounded-full transition-colors duration-200',
               featured ? 'bg-primary-600' : 'bg-slate-700'
@@ -282,7 +272,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
             <button
               key={tag.id}
               type="button"
-              onClick={(e) => toggleTag(e, tag.id)}
+              onClick={() => toggleTag(tag.id)}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
                 selectedTags.includes(tag.id)
@@ -365,7 +355,19 @@ export default function ProjectForm({ categories, tags, project }: Props) {
 
       {/* ── Submit ── */}
       <div className="flex items-center gap-4">
-        <SubmitButton label={isEdit ? 'Save Changes' : 'Create Project'} />
+        <button
+          type="submit"
+          disabled={isPending}
+          className="px-6 py-2.5 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
+        >
+          {isPending && (
+            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {isPending ? 'Saving…' : (isEdit ? 'Save Changes' : 'Create Project')}
+        </button>
         <a
           href="/admin/projects"
           className="text-slate-400 hover:text-slate-200 text-sm transition-colors"
