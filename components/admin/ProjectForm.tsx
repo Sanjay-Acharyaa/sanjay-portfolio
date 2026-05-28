@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createProject, updateProject, type ProjectFormState } from '@/app/actions/projects';
 import type { Category, Tag, Project, ProjectTag, ProjectImage, ProjectCategory } from '@prisma/client';
@@ -42,9 +42,12 @@ function SubmitButton({ label }: { label: string }) {
 export default function ProjectForm({ categories, tags, project }: Props) {
   const isEdit = !!project;
 
-  const action = isEdit
-    ? updateProject.bind(null, project.id)
-    : createProject;
+  // Stabilise action reference — a new .bind() on every render can confuse useActionState in React 19
+  const action = useMemo(
+    () => (isEdit ? updateProject.bind(null, project!.id) : createProject),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const [state, formAction] = useActionState<ProjectFormState, FormData>(action, {});
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
@@ -79,13 +82,15 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     }
   }, [state, isEdit]);
 
-  function toggleCategory(id: string) {
+  function toggleCategory(e: React.MouseEvent, id: string) {
+    e.preventDefault();
     setSelectedCategories(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   }
 
-  function toggleTag(id: string) {
+  function toggleTag(e: React.MouseEvent, id: string) {
+    e.preventDefault();
     setSelectedTags(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
@@ -167,7 +172,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => toggleCategory(cat.id)}
+                onClick={(e) => toggleCategory(e, cat.id)}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
                   selectedCategories.includes(cat.id)
@@ -236,7 +241,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setFeatured(f => !f)}
+            onClick={(e) => { e.preventDefault(); setFeatured(f => !f); }}
             className={cn(
               'relative w-11 h-6 rounded-full transition-colors duration-200',
               featured ? 'bg-primary-600' : 'bg-slate-700'
@@ -277,7 +282,7 @@ export default function ProjectForm({ categories, tags, project }: Props) {
             <button
               key={tag.id}
               type="button"
-              onClick={() => toggleTag(tag.id)}
+              onClick={(e) => toggleTag(e, tag.id)}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
                 selectedTags.includes(tag.id)
