@@ -11,6 +11,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/admin/login',
   },
   callbacks: {
+    authorized({ auth, request }) {
+      const { pathname } = request.nextUrl;
+      const isLoginPage = pathname === '/admin/login';
+      const isAdminRoute = pathname.startsWith('/admin');
+      const isLoggedIn = !!auth;
+
+      if (isAdminRoute && !isLoginPage && !isLoggedIn) return false;
+      if (isLoginPage && isLoggedIn) {
+        return Response.redirect(new URL('/admin', request.nextUrl));
+      }
+      return true;
+    },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
