@@ -3,7 +3,7 @@ import CategoryManager from '@/components/admin/CategoryManager';
 
 export default async function AdminCategoriesPage() {
   const categories = await prisma.category.findMany({
-    orderBy: { name: 'asc' },
+    orderBy: [{ order: 'asc' }, { name: 'asc' }],
     include: { _count: { select: { projects: true } } },
   });
 

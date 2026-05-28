@@ -36,6 +36,7 @@ model Category {
   slug        String          @unique
   description String?
   color       String          @default("#0083cc")
+  order       Int             @default(0)
   createdAt   DateTime        @default(now())
   projects    Project[]
   projectCategories ProjectCategory[]

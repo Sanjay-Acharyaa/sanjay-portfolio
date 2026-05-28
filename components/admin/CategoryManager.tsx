@@ -60,6 +60,18 @@ function CategoryForm({ onSubmit, onCancel, defaultValues, selectedColor, onColo
         </div>
       </div>
 
+      <div className="w-28">
+        <label className="block text-slate-400 text-xs font-medium mb-1.5">
+          Order <span className="text-slate-600 font-normal">(lower = first)</span>
+        </label>
+        <input
+          name="order"
+          type="number"
+          defaultValue={(defaultValues as CategoryWithCount & { order?: number })?.order ?? 0}
+          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-primary-500 transition-colors"
+        />
+      </div>
+
       <div>
         <label className="block text-slate-400 text-xs font-medium mb-2">Color</label>
         <ColorPicker value={selectedColor} onChange={onColorChange} />
@@ -183,7 +195,10 @@ export default function CategoryManager({ categories: initial }: Props) {
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
                   <div>
-                    <p className="text-slate-200 font-medium text-sm">{cat.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-slate-200 font-medium text-sm">{cat.name}</p>
+                      <span className="text-slate-600 text-xs">#{(cat as CategoryWithCount & { order?: number }).order ?? 0}</span>
+                    </div>
                     {cat.description && <p className="text-slate-500 text-xs mt-0.5">{cat.description}</p>}
                     <p className="text-slate-600 text-xs mt-0.5">{cat._count.projects} project{cat._count.projects !== 1 ? 's' : ''}</p>
                   </div>

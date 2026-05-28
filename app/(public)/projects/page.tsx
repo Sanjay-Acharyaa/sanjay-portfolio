@@ -19,7 +19,7 @@ export default async function ProjectsPage() {
         tags: { include: { tag: true } },
       },
     }),
-    prisma.category.findMany({ orderBy: { name: 'asc' } }),
+    prisma.category.findMany({ orderBy: [{ order: 'asc' }, { name: 'asc' }] }),
   ]);
 
   const serialised = projects.map(p => ({

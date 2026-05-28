@@ -31,7 +31,7 @@ async function getFeaturedProjects() {
 }
 
 async function getCategories() {
-  return prisma.category.findMany({ orderBy: { name: 'asc' } });
+  return prisma.category.findMany({ orderBy: [{ order: 'asc' }, { name: 'asc' }] });
 }
 
 export default async function Home() {

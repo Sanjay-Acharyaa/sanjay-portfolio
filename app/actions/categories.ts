@@ -8,6 +8,7 @@ export async function createCategory(formData: FormData) {
   const name = (formData.get('name') as string)?.trim();
   const description = (formData.get('description') as string)?.trim() || null;
   const color = (formData.get('color') as string) || '#0083cc';
+  const order = parseInt((formData.get('order') as string) || '0') || 0;
 
   if (!name) return { error: 'Name is required' };
 
@@ -15,7 +16,7 @@ export async function createCategory(formData: FormData) {
   const exists = await prisma.category.findUnique({ where: { slug } });
   if (exists) return { error: 'A category with this name already exists' };
 
-  await prisma.category.create({ data: { name, slug, description, color } });
+  await prisma.category.create({ data: { name, slug, description, color, order } });
   revalidatePath('/admin/categories');
   return { success: true };
 }
@@ -24,12 +25,13 @@ export async function updateCategory(id: string, formData: FormData) {
   const name = (formData.get('name') as string)?.trim();
   const description = (formData.get('description') as string)?.trim() || null;
   const color = (formData.get('color') as string) || '#0083cc';
+  const order = parseInt((formData.get('order') as string) || '0') || 0;
 
   if (!name) return { error: 'Name is required' };
 
   await prisma.category.update({
     where: { id },
-    data: { name, description, color },
+    data: { name, description, color, order },
   });
   revalidatePath('/admin/categories');
   return { success: true };

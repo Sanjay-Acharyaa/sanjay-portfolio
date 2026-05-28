@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default async function NewProjectPage() {
   const [categories, tags] = await Promise.all([
-    prisma.category.findMany({ orderBy: { name: 'asc' } }),
+    prisma.category.findMany({ orderBy: [{ order: 'asc' }, { name: 'asc' }] }),
     prisma.tag.findMany({ orderBy: { name: 'asc' } }),
   ]);
 
