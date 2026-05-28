@@ -29,12 +29,16 @@ async function getFeaturedProjects() {
   });
 }
 
+async function getCategories() {
+  return prisma.category.findMany({ orderBy: { name: 'asc' } });
+}
+
 export default async function Home() {
-  const projects = await getFeaturedProjects();
+  const [projects, categories] = await Promise.all([getFeaturedProjects(), getCategories()]);
 
   return (
     <>
-      <Hero />
+      <Hero categories={categories.map(c => c.name)} />
 
       {/* Featured Projects */}
       <section className="max-w-7xl mx-auto px-4 py-24">

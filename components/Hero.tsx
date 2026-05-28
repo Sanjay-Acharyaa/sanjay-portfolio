@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion, type Variants } from 'framer-motion';
 
-export default function Hero() {
+export default function Hero({ categories }: { categories: string[] }) {
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -71,7 +71,7 @@ export default function Hero() {
           variants={itemVariants}
           className="flex flex-wrap gap-3 justify-center mb-12"
         >
-          {['Structural Engineering', 'Transportation', 'Water Resources', 'Project Management'].map((specialty) => (
+          {categories.map((specialty) => (
             <span
               key={specialty}
               className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium"
