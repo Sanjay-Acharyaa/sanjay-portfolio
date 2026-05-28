@@ -33,20 +33,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        console.log('[auth] authorize called, email:', credentials?.email);
+        if (!credentials?.email || !credentials?.password) {
+          console.log('[auth] missing credentials');
+          return null;
+        }
+        try {
+          const admin = await prisma.admin.findUnique({
+            where: { email: credentials.email as string },
+          });
+          console.log('[auth] admin found:', !!admin);
+          if (!admin) return null;
 
-        const admin = await prisma.admin.findUnique({
-          where: { email: credentials.email as string },
-        });
-        if (!admin) return null;
+          const valid = await bcrypt.compare(
+            credentials.password as string,
+            admin.password
+          );
+          console.log('[auth] password valid:', valid);
+          if (!valid) return null;
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          admin.password
-        );
-        if (!valid) return null;
-
-        return { id: admin.id, email: admin.email, name: admin.name, role: admin.role };
+          return { id: admin.id, email: admin.email, name: admin.name, role: admin.role };
+        } catch (err) {
+          console.error('[auth] error:', err);
+          return null;
+        }
       },
     }),
   ],
