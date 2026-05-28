@@ -8,7 +8,7 @@ export async function proxy(req: NextRequest) {
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
-    cookieName: 'authjs.session-token',
+    secureCookie: req.nextUrl.protocol === 'https:',
   });
 
   const isLoggedIn = !!token;
