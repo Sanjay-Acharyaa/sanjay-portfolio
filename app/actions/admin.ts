@@ -9,6 +9,38 @@ export type PasswordChangeState = {
   success?: boolean;
 };
 
+export type EmailChangeState = {
+  error?: string;
+  success?: boolean;
+};
+
+export async function changeAdminEmail(
+  _prev: EmailChangeState,
+  formData: FormData
+): Promise<EmailChangeState> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: 'Not authenticated' };
+
+  const newEmail = (formData.get('email') as string)?.trim().toLowerCase();
+  const password = (formData.get('password') as string)?.trim();
+
+  if (!newEmail || !password) return { error: 'All fields are required' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return { error: 'Invalid email address' };
+
+  const admin = await prisma.admin.findUnique({ where: { id: session.user.id } });
+  if (!admin) return { error: 'Account not found' };
+
+  const valid = await bcrypt.compare(password, admin.password);
+  if (!valid) return { error: 'Password is incorrect' };
+
+  const existing = await prisma.admin.findUnique({ where: { email: newEmail } });
+  if (existing && existing.id !== admin.id) return { error: 'Email already in use' };
+
+  await prisma.admin.update({ where: { id: admin.id }, data: { email: newEmail } });
+
+  return { success: true };
+}
+
 export async function changeAdminPassword(
   _prev: PasswordChangeState,
   formData: FormData

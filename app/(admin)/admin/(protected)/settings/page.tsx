@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import PasswordChangeForm from '@/components/admin/PasswordChangeForm';
+import EmailChangeForm from '@/components/admin/EmailChangeForm';
 
 export default async function AdminSettingsPage() {
   const session = await auth();
@@ -25,6 +26,12 @@ export default async function AdminSettingsPage() {
             <p className="text-slate-500 text-sm">{session?.user?.email}</p>
           </div>
         </div>
+      </div>
+
+      {/* Email change */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h2 className="text-white font-semibold text-sm mb-5">Change Email</h2>
+        <EmailChangeForm currentEmail={session?.user?.email ?? ''} />
       </div>
 
       {/* Password change */}
