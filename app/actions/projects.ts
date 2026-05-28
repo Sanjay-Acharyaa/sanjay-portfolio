@@ -10,70 +10,91 @@ export type ProjectFormState = {
   fieldErrors?: Record<string, string>;
 };
 
+function parseForm(formData: FormData) {
+  const galleryRaw = (formData.get('galleryImages') as string) || '[]';
+  return {
+    title: (formData.get('title') as string)?.trim(),
+    shortDescription: (formData.get('shortDescription') as string)?.trim(),
+    description: (formData.get('description') as string)?.trim(),
+    challenge: (formData.get('challenge') as string)?.trim() || null,
+    solution: (formData.get('solution') as string)?.trim() || null,
+    categoryIds: formData.getAll('categoryIds') as string[],
+    tagIds: formData.getAll('tagIds') as string[],
+    results: ((formData.get('results') as string)?.trim() || '')
+      .split('\n').map(r => r.trim()).filter(Boolean),
+    year: formData.get('year') ? parseInt(formData.get('year') as string) : null,
+    location: (formData.get('location') as string)?.trim() || null,
+    client: (formData.get('client') as string)?.trim() || null,
+    coverImage: (formData.get('coverImage') as string)?.trim() || null,
+    status: (formData.get('status') as 'DRAFT' | 'PUBLISHED') || 'DRAFT',
+    featured: formData.get('featured') === 'true',
+    galleryImages: JSON.parse(galleryRaw) as { url: string; alt: string; order: number }[],
+  };
+}
+
+async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
+  let slug = base;
+  let suffix = 1;
+  while (true) {
+    const existing = await prisma.project.findFirst({ where: { slug } });
+    if (!existing || existing.id === excludeId) break;
+    slug = `${base}-${suffix++}`;
+  }
+  return slug;
+}
+
 // ─── Create ───────────────────────────────────────────────────────────────────
 export async function createProject(
   _prev: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
-  const title = (formData.get('title') as string)?.trim();
-  const shortDescription = (formData.get('shortDescription') as string)?.trim();
-  const description = (formData.get('description') as string)?.trim();
-  const challenge = (formData.get('challenge') as string)?.trim() || null;
-  const solution = (formData.get('solution') as string)?.trim() || null;
-  const categoryIds = formData.getAll('categoryIds') as string[];
-  const tagIds = formData.getAll('tagIds') as string[];
-  const resultsRaw = (formData.get('results') as string)?.trim();
-  const results = resultsRaw
-    ? resultsRaw.split('\n').map(r => r.trim()).filter(Boolean)
-    : [];
-  const year = formData.get('year') ? parseInt(formData.get('year') as string) : null;
-  const location = (formData.get('location') as string)?.trim() || null;
-  const client = (formData.get('client') as string)?.trim() || null;
-  const coverImage = (formData.get('coverImage') as string)?.trim() || null;
-  const status = (formData.get('status') as 'DRAFT' | 'PUBLISHED') || 'DRAFT';
-  const featured = formData.get('featured') === 'true';
-  const galleryRaw = (formData.get('galleryImages') as string) || '[]';
-  const galleryImages: { url: string; alt: string; order: number }[] = JSON.parse(galleryRaw);
+  const f = parseForm(formData);
 
-  if (!title) return { fieldErrors: { title: 'Title is required' } };
-  if (!shortDescription) return { fieldErrors: { shortDescription: 'Short description is required' } };
-  if (!description) return { fieldErrors: { description: 'Description is required' } };
+  if (!f.title) return { fieldErrors: { title: 'Title is required' } };
+  if (!f.shortDescription) return { fieldErrors: { shortDescription: 'Short description is required' } };
+  if (!f.description) return { fieldErrors: { description: 'Description is required' } };
 
-  const baseSlug = slugify(title);
-  let slug = baseSlug;
-  let suffix = 1;
-  while (await prisma.project.findUnique({ where: { slug } })) {
-    slug = `${baseSlug}-${suffix++}`;
-  }
+  let projectId: string;
+  let slug: string;
 
-  // Create project with scalar fields only — no nested writes (PrismaNeonHttp has no transactions)
-  const project = await prisma.project.create({
-    data: {
-      title, slug, shortDescription, description, challenge, solution,
-      results, year, location, client, coverImage, status, featured,
-      categoryId: categoryIds[0] ?? null,
-    },
-  });
+  try {
+    slug = await uniqueSlug(slugify(f.title));
 
-  if (tagIds.length) {
-    await prisma.projectTag.createMany({
-      data: tagIds.map(tagId => ({ projectId: project.id, tagId })),
+    const project = await prisma.project.create({
+      data: {
+        title: f.title, slug, shortDescription: f.shortDescription,
+        description: f.description, challenge: f.challenge, solution: f.solution,
+        results: f.results, year: f.year, location: f.location, client: f.client,
+        coverImage: f.coverImage, status: f.status, featured: f.featured,
+        categoryId: f.categoryIds[0] ?? null,
+      },
     });
-  }
-  if (galleryImages.length) {
-    await prisma.projectImage.createMany({
-      data: galleryImages.map(img => ({ projectId: project.id, url: img.url, alt: img.alt || null, order: img.order })),
-    });
-  }
-  if (categoryIds.length) {
-    await prisma.projectCategory.createMany({
-      data: categoryIds.map(categoryId => ({ projectId: project.id, categoryId })),
-    });
+    projectId = project.id;
+
+    if (f.tagIds.length) {
+      await prisma.projectTag.createMany({
+        data: f.tagIds.map(tagId => ({ projectId, tagId })),
+      });
+    }
+    if (f.galleryImages.length) {
+      await prisma.projectImage.createMany({
+        data: f.galleryImages.map(img => ({ projectId, url: img.url, alt: img.alt || null, order: img.order })),
+      });
+    }
+    if (f.categoryIds.length) {
+      await prisma.projectCategory.createMany({
+        data: f.categoryIds.map(categoryId => ({ projectId, categoryId })),
+      });
+    }
+
+    revalidatePath('/admin/projects');
+    revalidatePath('/projects');
+  } catch (e: unknown) {
+    console.error('createProject error:', e);
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred' };
   }
 
-  revalidatePath('/admin/projects');
-  revalidatePath('/projects');
-  redirect(`/admin/projects/${project.id}/edit?created=1`);
+  redirect(`/admin/projects/${projectId}/edit?created=1`);
 }
 
 // ─── Update ───────────────────────────────────────────────────────────────────
@@ -82,80 +103,57 @@ export async function updateProject(
   _prev: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
-  const title = (formData.get('title') as string)?.trim();
-  const shortDescription = (formData.get('shortDescription') as string)?.trim();
-  const description = (formData.get('description') as string)?.trim();
-  const challenge = (formData.get('challenge') as string)?.trim() || null;
-  const solution = (formData.get('solution') as string)?.trim() || null;
-  const categoryIds = formData.getAll('categoryIds') as string[];
-  const tagIds = formData.getAll('tagIds') as string[];
-  const resultsRaw = (formData.get('results') as string)?.trim();
-  const results = resultsRaw
-    ? resultsRaw.split('\n').map(r => r.trim()).filter(Boolean)
-    : [];
-  const year = formData.get('year') ? parseInt(formData.get('year') as string) : null;
-  const location = (formData.get('location') as string)?.trim() || null;
-  const client = (formData.get('client') as string)?.trim() || null;
-  const coverImage = (formData.get('coverImage') as string)?.trim() || null;
-  const status = (formData.get('status') as 'DRAFT' | 'PUBLISHED') || 'DRAFT';
-  const featured = formData.get('featured') === 'true';
-  const galleryRaw = (formData.get('galleryImages') as string) || '[]';
-  const galleryImages: { url: string; alt: string; order: number }[] = JSON.parse(galleryRaw);
+  const f = parseForm(formData);
 
-  if (!title) return { fieldErrors: { title: 'Title is required' } };
-  if (!shortDescription) return { fieldErrors: { shortDescription: 'Short description is required' } };
-  if (!description) return { fieldErrors: { description: 'Description is required' } };
+  if (!f.title) return { fieldErrors: { title: 'Title is required' } };
+  if (!f.shortDescription) return { fieldErrors: { shortDescription: 'Short description is required' } };
+  if (!f.description) return { fieldErrors: { description: 'Description is required' } };
 
-  const existing = await prisma.project.findUnique({ where: { id } });
-  if (!existing) return { error: 'Project not found' };
+  try {
+    const existing = await prisma.project.findUnique({ where: { id } });
+    if (!existing) return { error: 'Project not found' };
 
-  let slug = existing.slug;
-  if (slugify(title) !== slugify(existing.title)) {
-    const baseSlug = slugify(title);
-    slug = baseSlug;
-    let suffix = 1;
-    while (await prisma.project.findUnique({ where: { slug, NOT: { id } } })) {
-      slug = `${baseSlug}-${suffix++}`;
+    const slug = await uniqueSlug(slugify(f.title), id);
+
+    await prisma.project.update({
+      where: { id },
+      data: {
+        title: f.title, slug, shortDescription: f.shortDescription,
+        description: f.description, challenge: f.challenge, solution: f.solution,
+        results: f.results, year: f.year, location: f.location, client: f.client,
+        coverImage: f.coverImage, status: f.status, featured: f.featured,
+        categoryId: f.categoryIds[0] ?? null,
+      },
+    });
+
+    await prisma.projectTag.deleteMany({ where: { projectId: id } });
+    if (f.tagIds.length) {
+      await prisma.projectTag.createMany({
+        data: f.tagIds.map(tagId => ({ projectId: id, tagId })),
+      });
     }
+
+    await prisma.projectImage.deleteMany({ where: { projectId: id } });
+    if (f.galleryImages.length) {
+      await prisma.projectImage.createMany({
+        data: f.galleryImages.map(img => ({ projectId: id, url: img.url, alt: img.alt || null, order: img.order })),
+      });
+    }
+
+    await prisma.projectCategory.deleteMany({ where: { projectId: id } });
+    if (f.categoryIds.length) {
+      await prisma.projectCategory.createMany({
+        data: f.categoryIds.map(categoryId => ({ projectId: id, categoryId })),
+      });
+    }
+
+    revalidatePath('/admin/projects');
+    revalidatePath(`/projects/${slug}`);
+    revalidatePath('/projects');
+  } catch (e: unknown) {
+    console.error('updateProject error:', e);
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred' };
   }
-
-  // Update scalar fields only — no nested writes (PrismaNeonHttp has no transactions)
-  await prisma.project.update({
-    where: { id },
-    data: {
-      title, slug, shortDescription, description, challenge, solution,
-      results, year, location, client, coverImage, status, featured,
-      categoryId: categoryIds[0] ?? null,
-    },
-  });
-
-  // Tags: delete then insert separately
-  await prisma.projectTag.deleteMany({ where: { projectId: id } });
-  if (tagIds.length) {
-    await prisma.projectTag.createMany({
-      data: tagIds.map(tagId => ({ projectId: id, tagId })),
-    });
-  }
-
-  // Images: delete then insert separately
-  await prisma.projectImage.deleteMany({ where: { projectId: id } });
-  if (galleryImages.length) {
-    await prisma.projectImage.createMany({
-      data: galleryImages.map(img => ({ projectId: id, url: img.url, alt: img.alt || null, order: img.order })),
-    });
-  }
-
-  // Categories: delete then insert separately
-  await prisma.projectCategory.deleteMany({ where: { projectId: id } });
-  if (categoryIds.length) {
-    await prisma.projectCategory.createMany({
-      data: categoryIds.map(categoryId => ({ projectId: id, categoryId })),
-    });
-  }
-
-  revalidatePath('/admin/projects');
-  revalidatePath(`/projects/${slug}`);
-  revalidatePath('/projects');
 
   return {};
 }
