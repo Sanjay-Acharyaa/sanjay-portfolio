@@ -7,8 +7,7 @@ import { motion } from 'framer-motion';
 interface ProjectCardProps {
   slug: string;
   title: string;
-  category?: string | null;
-  categoryColor?: string | null;
+  categories?: { name: string; color: string }[];
   description: string;
   coverImage?: string | null;
   tags?: string[];
@@ -20,8 +19,7 @@ interface ProjectCardProps {
 export default function ProjectCard({
   slug,
   title,
-  category,
-  categoryColor,
+  categories = [],
   description,
   coverImage,
   tags = [],
@@ -51,14 +49,17 @@ export default function ProjectCard({
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-70 group-hover:opacity-90 transition-opacity" />
-            {category && (
-              <div className="absolute top-3 right-3">
-                <span
-                  className="inline-block px-2.5 py-1 text-white text-xs font-semibold rounded-full"
-                  style={{ backgroundColor: categoryColor ?? '#0083cc' }}
-                >
-                  {category}
-                </span>
+            {categories.length > 0 && (
+              <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+                {categories.map(cat => (
+                  <span
+                    key={cat.name}
+                    className="inline-block px-2.5 py-1 text-white text-xs font-semibold rounded-full"
+                    style={{ backgroundColor: cat.color }}
+                  >
+                    {cat.name}
+                  </span>
+                ))}
               </div>
             )}
           </div>

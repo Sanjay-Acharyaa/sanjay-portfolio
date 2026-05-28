@@ -18,7 +18,7 @@ function parseForm(formData: FormData) {
     description: (formData.get('description') as string)?.trim(),
     challenge: (formData.get('challenge') as string)?.trim() || null,
     solution: (formData.get('solution') as string)?.trim() || null,
-    categoryId: (formData.get('categoryId') as string) || null,
+    categoryIds: formData.getAll('categoryIds') as string[],
     tagIds: formData.getAll('tagIds') as string[],
     results: ((formData.get('results') as string)?.trim() || '')
       .split('\n').map(r => r.trim()).filter(Boolean),
@@ -65,7 +65,7 @@ export async function createProject(
         description: f.description, challenge: f.challenge, solution: f.solution,
         results: f.results, year: f.year, location: f.location, client: f.client,
         coverImage: f.coverImage, status: f.status, featured: f.featured,
-        categoryId: f.categoryId,
+        categoryId: f.categoryIds[0] ?? null,
       },
     });
     projectId = project.id;
@@ -75,6 +75,9 @@ export async function createProject(
     }
     for (const img of f.galleryImages) {
       await prisma.projectImage.create({ data: { projectId, url: img.url, alt: img.alt || null, order: img.order } });
+    }
+    for (const categoryId of f.categoryIds) {
+      await prisma.projectCategory.create({ data: { projectId, categoryId } });
     }
 
     revalidatePath('/admin/projects');
@@ -112,7 +115,7 @@ export async function updateProject(
         description: f.description, challenge: f.challenge, solution: f.solution,
         results: f.results, year: f.year, location: f.location, client: f.client,
         coverImage: f.coverImage, status: f.status, featured: f.featured,
-        categoryId: f.categoryId,
+        categoryId: f.categoryIds[0] ?? null,
       },
     });
 
@@ -124,6 +127,11 @@ export async function updateProject(
     await prisma.projectImage.deleteMany({ where: { projectId: id } });
     for (const img of f.galleryImages) {
       await prisma.projectImage.create({ data: { projectId: id, url: img.url, alt: img.alt || null, order: img.order } });
+    }
+
+    await prisma.projectCategory.deleteMany({ where: { projectId: id } });
+    for (const categoryId of f.categoryIds) {
+      await prisma.projectCategory.create({ data: { projectId: id, categoryId } });
     }
 
     revalidatePath('/admin/projects');

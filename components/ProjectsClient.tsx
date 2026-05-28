@@ -14,7 +14,7 @@ interface Project {
   featured: boolean;
   year: number | null;
   location: string | null;
-  category: { name: string; color: string } | null;
+  categories: { name: string; color: string }[];
   tags: string[];
 }
 
@@ -27,7 +27,7 @@ export default function ProjectsClient({ projects, categories }: Props) {
   const [activeCat, setActiveCat] = useState<string | null>(null);
 
   const filtered = activeCat
-    ? projects.filter(p => p.category?.name === activeCat)
+    ? projects.filter(p => p.categories.some(c => c.name === activeCat))
     : projects;
 
   return (
@@ -54,7 +54,7 @@ export default function ProjectsClient({ projects, categories }: Props) {
             All ({projects.length})
           </button>
           {categories.map(cat => {
-            const count = projects.filter(p => p.category?.name === cat.name).length;
+            const count = projects.filter(p => p.categories.some(c => c.name === cat.name)).length;
             if (count === 0) return null;
             return (
               <button
@@ -94,8 +94,7 @@ export default function ProjectsClient({ projects, categories }: Props) {
                 <ProjectCard
                   slug={project.slug}
                   title={project.title}
-                  category={project.category?.name}
-                  categoryColor={project.category?.color}
+                  categories={project.categories}
                   description={project.shortDescription}
                   coverImage={project.coverImage}
                   tags={project.tags}

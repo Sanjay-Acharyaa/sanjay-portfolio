@@ -47,8 +47,8 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     : createProject;
 
   const [state, formAction] = useActionState<ProjectFormState, FormData>(action, {});
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    project?.categoryId ?? ''
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    project?.categories?.map(pc => pc.categoryId) ?? (project?.categoryId ? [project.categoryId] : [])
   );
   const [selectedTags, setSelectedTags] = useState<string[]>(
     project?.tags.map(pt => pt.tagId) ?? []
@@ -79,6 +79,12 @@ export default function ProjectForm({ categories, tags, project }: Props) {
     }
   }, [state, isEdit]);
 
+  function toggleCategory(id: string) {
+    setSelectedCategories(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  }
+
   function toggleTag(id: string) {
     setSelectedTags(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
@@ -88,7 +94,9 @@ export default function ProjectForm({ categories, tags, project }: Props) {
   return (
     <form action={formAction} className="space-y-8">
       {/* Hidden fields */}
-      <input type="hidden" name="categoryId" value={selectedCategory} />
+      {selectedCategories.map(id => (
+        <input key={id} type="hidden" name="categoryIds" value={id} />
+      ))}
       {selectedTags.map(id => (
         <input key={id} type="hidden" name="tagIds" value={id} />
       ))}
@@ -149,39 +157,32 @@ export default function ProjectForm({ categories, tags, project }: Props) {
           )}
         </div>
 
-        {/* Category single-select */}
+        {/* Categories multi-select */}
         <div>
-          <label className="block text-slate-400 text-sm font-medium mb-2">Category</label>
+          <label className="block text-slate-400 text-sm font-medium mb-2">
+            Categories <span className="text-slate-600 font-normal">(select all that apply)</span>
+          </label>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
-                selectedCategory === ''
-                  ? 'bg-slate-600 text-white border-slate-500'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
-              )}
-            >
-              None
-            </button>
             {categories.map(cat => (
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => toggleCategory(cat.id)}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
-                  selectedCategory === cat.id
+                  selectedCategories.includes(cat.id)
                     ? 'text-white border-transparent'
                     : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
                 )}
-                style={selectedCategory === cat.id ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+                style={selectedCategories.includes(cat.id) ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
               >
-                {selectedCategory === cat.id ? '✓ ' : ''}{cat.name}
+                {selectedCategories.includes(cat.id) ? '✓ ' : ''}{cat.name}
               </button>
             ))}
           </div>
+          {selectedCategories.length > 0 && (
+            <p className="text-slate-500 text-xs mt-1.5">{selectedCategories.length} selected</p>
+          )}
         </div>
 
         {/* Status */}

@@ -31,7 +31,7 @@ export default async function ProjectDetailPage({ params }: Props) {
   const project = await prisma.project.findUnique({
     where: { slug, status: 'PUBLISHED' },
     include: {
-      category: true,
+      categories: { include: { category: true } },
       tags: { include: { tag: true } },
       images: { orderBy: { order: 'asc' } },
     },
@@ -71,13 +71,18 @@ export default async function ProjectDetailPage({ params }: Props) {
 
       {/* Header */}
       <div className="mb-10">
-        {project.category && (
-          <span
-            className="inline-block px-3 py-1 text-white text-xs font-semibold rounded-full mb-4"
-            style={{ backgroundColor: project.category.color }}
-          >
-            {project.category.name}
-          </span>
+        {project.categories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {project.categories.map(pc => (
+              <span
+                key={pc.categoryId}
+                className="inline-block px-3 py-1 text-white text-xs font-semibold rounded-full"
+                style={{ backgroundColor: pc.category.color }}
+              >
+                {pc.category.name}
+              </span>
+            ))}
+          </div>
         )}
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">
           {project.title}

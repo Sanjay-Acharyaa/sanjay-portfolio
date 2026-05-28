@@ -15,7 +15,7 @@ export default async function ProjectsPage() {
       where: { status: 'PUBLISHED' },
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       include: {
-        category: true,
+        categories: { include: { category: true } },
         tags: { include: { tag: true } },
       },
     }),
@@ -31,7 +31,7 @@ export default async function ProjectsPage() {
     featured: p.featured,
     year: p.year,
     location: p.location,
-    category: p.category ? { name: p.category.name, color: p.category.color } : null,
+    categories: p.categories.map(pc => ({ name: pc.category.name, color: pc.category.color })),
     tags: p.tags.map(pt => pt.tag.name),
   }));
 
