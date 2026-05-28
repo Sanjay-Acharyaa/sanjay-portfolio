@@ -18,7 +18,7 @@ function parseForm(formData: FormData) {
     description: (formData.get('description') as string)?.trim(),
     challenge: (formData.get('challenge') as string)?.trim() || null,
     solution: (formData.get('solution') as string)?.trim() || null,
-    categoryIds: formData.getAll('categoryIds') as string[],
+    categoryId: (formData.get('categoryId') as string) || null,
     tagIds: formData.getAll('tagIds') as string[],
     results: ((formData.get('results') as string)?.trim() || '')
       .split('\n').map(r => r.trim()).filter(Boolean),
@@ -55,10 +55,9 @@ export async function createProject(
   if (!f.description) return { fieldErrors: { description: 'Description is required' } };
 
   let projectId: string;
-  let slug: string;
 
   try {
-    slug = await uniqueSlug(slugify(f.title));
+    const slug = await uniqueSlug(slugify(f.title));
 
     const project = await prisma.project.create({
       data: {
@@ -66,25 +65,16 @@ export async function createProject(
         description: f.description, challenge: f.challenge, solution: f.solution,
         results: f.results, year: f.year, location: f.location, client: f.client,
         coverImage: f.coverImage, status: f.status, featured: f.featured,
-        categoryId: f.categoryIds[0] ?? null,
+        categoryId: f.categoryId,
       },
     });
     projectId = project.id;
 
-    if (f.tagIds.length) {
-      await prisma.projectTag.createMany({
-        data: f.tagIds.map(tagId => ({ projectId, tagId })),
-      });
+    for (const tagId of f.tagIds) {
+      await prisma.projectTag.create({ data: { projectId, tagId } });
     }
-    if (f.galleryImages.length) {
-      await prisma.projectImage.createMany({
-        data: f.galleryImages.map(img => ({ projectId, url: img.url, alt: img.alt || null, order: img.order })),
-      });
-    }
-    if (f.categoryIds.length) {
-      await prisma.projectCategory.createMany({
-        data: f.categoryIds.map(categoryId => ({ projectId, categoryId })),
-      });
+    for (const img of f.galleryImages) {
+      await prisma.projectImage.create({ data: { projectId, url: img.url, alt: img.alt || null, order: img.order } });
     }
 
     revalidatePath('/admin/projects');
@@ -122,29 +112,18 @@ export async function updateProject(
         description: f.description, challenge: f.challenge, solution: f.solution,
         results: f.results, year: f.year, location: f.location, client: f.client,
         coverImage: f.coverImage, status: f.status, featured: f.featured,
-        categoryId: f.categoryIds[0] ?? null,
+        categoryId: f.categoryId,
       },
     });
 
     await prisma.projectTag.deleteMany({ where: { projectId: id } });
-    if (f.tagIds.length) {
-      await prisma.projectTag.createMany({
-        data: f.tagIds.map(tagId => ({ projectId: id, tagId })),
-      });
+    for (const tagId of f.tagIds) {
+      await prisma.projectTag.create({ data: { projectId: id, tagId } });
     }
 
     await prisma.projectImage.deleteMany({ where: { projectId: id } });
-    if (f.galleryImages.length) {
-      await prisma.projectImage.createMany({
-        data: f.galleryImages.map(img => ({ projectId: id, url: img.url, alt: img.alt || null, order: img.order })),
-      });
-    }
-
-    await prisma.projectCategory.deleteMany({ where: { projectId: id } });
-    if (f.categoryIds.length) {
-      await prisma.projectCategory.createMany({
-        data: f.categoryIds.map(categoryId => ({ projectId: id, categoryId })),
-      });
+    for (const img of f.galleryImages) {
+      await prisma.projectImage.create({ data: { projectId: id, url: img.url, alt: img.alt || null, order: img.order } });
     }
 
     revalidatePath('/admin/projects');
