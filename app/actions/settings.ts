@@ -20,14 +20,16 @@ export async function updateSiteSettings(
   const session = await auth();
   if (!session?.user?.id) return { error: 'Not authenticated' };
 
-  const updates = Object.keys(SETTING_DEFAULTS).map(key => {
-    const value = (formData.get(key) as string)?.trim() ?? SETTING_DEFAULTS[key];
-    return prisma.siteSetting.upsert({
-      where: { key },
-      update: { value },
-      create: { key, value },
+  const updates = Object.keys(SETTING_DEFAULTS)
+    .filter(key => formData.has(key))
+    .map(key => {
+      const value = (formData.get(key) as string)?.trim() ?? SETTING_DEFAULTS[key];
+      return prisma.siteSetting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
     });
-  });
 
   await Promise.all(updates);
   return { success: true };

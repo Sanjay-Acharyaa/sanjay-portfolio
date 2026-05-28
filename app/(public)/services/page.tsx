@@ -1,6 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import * as LucideIcons from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
+
+function ServiceIcon({ name, className }: { name: string; className?: string }) {
+  const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[name];
+  if (!Icon) return null;
+  return <Icon className={className} />;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -36,15 +44,15 @@ export default async function ServicesPage() {
               className="group p-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-lg transition-all"
             >
               {/* Icon or number */}
-              {service.icon ? (
-                <div className="text-4xl mb-5">{service.icon}</div>
-              ) : (
-                <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mb-5">
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mb-5">
+                {service.icon ? (
+                  <ServiceIcon name={service.icon} className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                ) : (
                   <span className="text-primary-600 dark:text-primary-400 font-bold text-lg">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                </div>
-              )}
+                )}
+              </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                 {service.title}
               </h2>

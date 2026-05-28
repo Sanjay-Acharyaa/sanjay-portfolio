@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import PasswordChangeForm from '@/components/admin/PasswordChangeForm';
 import EmailChangeForm from '@/components/admin/EmailChangeForm';
 import HeroSettingsForm from '@/components/admin/HeroSettingsForm';
+import ContactSettingsForm from '@/components/admin/ContactSettingsForm';
 import { getSiteSettings } from '@/app/actions/settings';
 
 export default async function AdminSettingsPage() {
@@ -35,6 +36,13 @@ export default async function AdminSettingsPage() {
         <h2 className="text-white font-semibold text-sm mb-1">Homepage Hero</h2>
         <p className="text-slate-500 text-xs mb-5">Edit the heading and text shown at the top of your homepage</p>
         <HeroSettingsForm settings={settings} />
+      </div>
+
+      {/* Contact details */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h2 className="text-white font-semibold text-sm mb-1">Contact Details</h2>
+        <p className="text-slate-500 text-xs mb-5">Shown on the Contact page and in the footer</p>
+        <ContactSettingsForm settings={settings} />
       </div>
 
       {/* Email change */}
