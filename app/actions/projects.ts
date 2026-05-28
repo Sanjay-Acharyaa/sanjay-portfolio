@@ -46,31 +46,25 @@ export async function createProject(
     slug = `${baseSlug}-${suffix++}`;
   }
 
+  // Create project with scalar fields only — no nested writes (PrismaNeonHttp has no transactions)
   const project = await prisma.project.create({
     data: {
-      title,
-      slug,
-      shortDescription,
-      description,
-      challenge,
-      solution,
-      results,
-      year,
-      location,
-      client,
-      coverImage,
-      status,
-      featured,
+      title, slug, shortDescription, description, challenge, solution,
+      results, year, location, client, coverImage, status, featured,
       categoryId: categoryIds[0] ?? null,
-      tags: tagIds.length
-        ? { create: tagIds.map(tagId => ({ tagId })) }
-        : undefined,
-      images: galleryImages.length
-        ? { create: galleryImages.map(img => ({ url: img.url, alt: img.alt || null, order: img.order })) }
-        : undefined,
     },
   });
 
+  if (tagIds.length) {
+    await prisma.projectTag.createMany({
+      data: tagIds.map(tagId => ({ projectId: project.id, tagId })),
+    });
+  }
+  if (galleryImages.length) {
+    await prisma.projectImage.createMany({
+      data: galleryImages.map(img => ({ projectId: project.id, url: img.url, alt: img.alt || null, order: img.order })),
+    });
+  }
   if (categoryIds.length) {
     await prisma.projectCategory.createMany({
       data: categoryIds.map(categoryId => ({ projectId: project.id, categoryId })),
@@ -125,34 +119,33 @@ export async function updateProject(
     }
   }
 
+  // Update scalar fields only — no nested writes (PrismaNeonHttp has no transactions)
   await prisma.project.update({
     where: { id },
     data: {
-      title,
-      slug,
-      shortDescription,
-      description,
-      challenge,
-      solution,
-      results,
-      year,
-      location,
-      client,
-      coverImage,
-      status,
-      featured,
+      title, slug, shortDescription, description, challenge, solution,
+      results, year, location, client, coverImage, status, featured,
       categoryId: categoryIds[0] ?? null,
-      tags: {
-        deleteMany: {},
-        create: tagIds.map(tagId => ({ tagId })),
-      },
-      images: {
-        deleteMany: {},
-        create: galleryImages.map(img => ({ url: img.url, alt: img.alt || null, order: img.order })),
-      },
     },
   });
 
+  // Tags: delete then insert separately
+  await prisma.projectTag.deleteMany({ where: { projectId: id } });
+  if (tagIds.length) {
+    await prisma.projectTag.createMany({
+      data: tagIds.map(tagId => ({ projectId: id, tagId })),
+    });
+  }
+
+  // Images: delete then insert separately
+  await prisma.projectImage.deleteMany({ where: { projectId: id } });
+  if (galleryImages.length) {
+    await prisma.projectImage.createMany({
+      data: galleryImages.map(img => ({ projectId: id, url: img.url, alt: img.alt || null, order: img.order })),
+    });
+  }
+
+  // Categories: delete then insert separately
   await prisma.projectCategory.deleteMany({ where: { projectId: id } });
   if (categoryIds.length) {
     await prisma.projectCategory.createMany({
