@@ -62,9 +62,6 @@ export async function createProject(
       status,
       featured,
       categoryId: categoryIds[0] ?? null,
-      categories: categoryIds.length
-        ? { create: categoryIds.map(categoryId => ({ categoryId })) }
-        : undefined,
       tags: tagIds.length
         ? { create: tagIds.map(tagId => ({ tagId })) }
         : undefined,
@@ -73,6 +70,12 @@ export async function createProject(
         : undefined,
     },
   });
+
+  if (categoryIds.length) {
+    await prisma.projectCategory.createMany({
+      data: categoryIds.map(categoryId => ({ projectId: project.id, categoryId })),
+    });
+  }
 
   revalidatePath('/admin/projects');
   revalidatePath('/projects');
@@ -139,10 +142,6 @@ export async function updateProject(
       status,
       featured,
       categoryId: categoryIds[0] ?? null,
-      categories: {
-        deleteMany: {},
-        create: categoryIds.map(categoryId => ({ categoryId })),
-      },
       tags: {
         deleteMany: {},
         create: tagIds.map(tagId => ({ tagId })),
@@ -153,6 +152,13 @@ export async function updateProject(
       },
     },
   });
+
+  await prisma.projectCategory.deleteMany({ where: { projectId: id } });
+  if (categoryIds.length) {
+    await prisma.projectCategory.createMany({
+      data: categoryIds.map(categoryId => ({ projectId: id, categoryId })),
+    });
+  }
 
   revalidatePath('/admin/projects');
   revalidatePath(`/projects/${slug}`);
